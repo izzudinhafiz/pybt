@@ -1,25 +1,14 @@
-import os
-import alpaca_trade_api as tradeapi
-from commons.models.market_model import Asset, Price, db
-from datetime import datetime, timedelta
-import pandas as pd
-from commons.markettime import MarketTime
-import sys
-from peewee import chunked
-import threading
-import math
+from commons.models.market_model import Asset, Price, sq_db, pg_db
 import time
+import datetime as dt
+pg_db.bind([Asset, Price])
 
-lock = threading.Lock()
+start = time.time()
+aapl = Asset.get(Asset.symbol == "AAPL")
 
-
-def worker(w_id):
-    for i in range(3):
-        with lock:
-            print(f"{w_id}: Got Lock")
-            time.sleep(1)
-            print(f"{w_id}: Releasing Lock")
-
-
-for n in range(5):
-    threading.Thread(target=worker, args=(n,)).start()
+start = time.time()
+prices = Price.select().where((Price.asset == aapl) & (Price.time >= dt.datetime(2020, 12, 1)) & (Price.time <= dt.datetime(2020, 12, 2)))
+print(len(prices))
+for price in prices:
+    print(price.time)
+print(f"{start-time.time()}")

@@ -1,6 +1,6 @@
 import os
 import alpaca_trade_api as tradeapi
-from commons.models.market_model import Asset, Price, db
+from commons.models.market_model import Asset, Price, pg_db
 from commons.markettime import MarketTime
 from datetime import datetime, timedelta
 from peewee import chunked, DoesNotExist
@@ -17,6 +17,8 @@ cycle_time_limit = 60/(CALL_LIMIT/API_WORKER)
 api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.markets")
 account = api.get_account()
 
+pg_db.bind([Asset, Price])
+
 asset_q = queue.Queue()
 write_q = queue.Queue()
 mt = MarketTime()
@@ -28,7 +30,7 @@ def worker_db():
         print(f"Write Queue Size: {write_q.qsize()}")
         try:
             data = write_q.get(block=False)
-            with db.atomic():
+            with pg_db.atomic():
                 for batch in chunked(data, 999):
                     Price.insert_many(batch).execute()
             write_q.task_done()

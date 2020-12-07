@@ -1,8 +1,18 @@
 from peewee import *
+import os
 
-db = SqliteDatabase("market.db", pragmas={"journal_mode": "wal",
-                                          "synchronous": 0,
-                                          "cache_size": -4000})
+PG_USER = os.getenv("PG_USER")
+PG_PW = os.getenv("PG_PW")
+
+sq_db = SqliteDatabase("market.db", pragmas={"journal_mode": "wal",
+                                             "synchronous": 0,
+                                             "cache_size": -4000})
+
+pg_db = PostgresqlDatabase("alpaca_market",
+                           user=PG_USER,
+                           password=PG_PW,
+                           host="localhost",
+                           port=5432)
 
 
 class Asset(Model):
@@ -19,9 +29,6 @@ class Asset(Model):
     sp500 = BooleanField(default=False)
     sector = CharField(null=True)
 
-    class Meta:
-        database = db
-
 
 class Financial(Model):
     asset = ForeignKeyField(Asset, backref="financials")
@@ -31,9 +38,6 @@ class Financial(Model):
     ytd_l = FloatField()
     market_cap = FloatField()
     ebitda = FloatField()
-
-    class Meta:
-        database = db
 
 
 class Price(Model):
@@ -46,11 +50,12 @@ class Price(Model):
     time = TimestampField()
 
     class Meta:
-        database = db
         indexes = (
             (("asset", "time"), True),
         )
 
 
-db.create_tables([Asset, Financial, Price])
-print(db.journal_mode, db.cache_size)
+# sq_db.bind([Asset, Financial, Price])
+# sq_db.create_tables([Asset, Financial, Price])
+# pg_db.bind([Asset, Financial, Price])
+# pg_db.create_tables([Asset, Financial, Price])
