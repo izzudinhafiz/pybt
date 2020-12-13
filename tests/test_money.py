@@ -11,13 +11,26 @@ import pytest
 
 
 def test_init():
-    ms = [Money(1), Money(1.0), Money(1.000001), Money.from_cents(100), Money.from_cents(100.6659)]
+    ms = [Money(1), Money(1.0), Money(1.000001), Money.from_cents(100), Money.from_cents(100.4569)]
     for m in ms:
         assert m == 1
         assert m == 1.0
         assert m == Money(1)
         assert m != 1.0000000001
         assert Money(m) == m
+
+    ms = [Money(1.999), Money(2), Money(2.001), Money.from_cents(199.987)]
+    for m in ms:
+        assert m == 2
+        assert m == 2.0
+        assert m == Money(2)
+        assert m != 2.0000000001
+        assert Money(m) == m
+
+
+def test_rounding():
+    assert Money(1.379) == 1.38
+    assert Money(1.371) == 1.37
 
 
 def test_add():

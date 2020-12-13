@@ -14,4 +14,4 @@
 
 # Ignore spreadsheets etc
 *.csv
-*.xlsx
+*.xls*

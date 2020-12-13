@@ -6,7 +6,7 @@ import csv
 pg_db.bind([Asset, Price])
 
 start = time.time()
-aapl = Asset.get(Asset.symbol == "AAPL")
+aapl = Asset.get(Asset.symbol == "MMM")
 
 start = time.time()
 prices = Price.select().where((Price.asset == aapl) & (Price.time >= dt.datetime(2020, 12, 1)) & (Price.time <= dt.datetime(2020, 12, 4))).dicts()

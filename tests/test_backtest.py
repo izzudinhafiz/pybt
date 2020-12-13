@@ -11,7 +11,15 @@ from commons.backtest import Market
 from datetime import datetime, timedelta, time
 import pytest
 import csv
-from pprint import pprint
+import os
+import time
+from commons.models.market_model import Asset, Price, Financial, pg_db
+import alpaca_trade_api as tradeapi
+
+pg_db.bind([Asset, Price, Financial])
+SECRET_KEY = os.getenv("SECRET_KEY")
+API_KEY = os.getenv("API_KEY")
+api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.markets")
 
 
 def test_init():
@@ -43,5 +51,44 @@ def test_ticking():
     assert market.day_counter == 3
 
 
-test_init()
-test_ticking()
+def test_current_price():
+    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+
+    debug_price_list = []
+    with open("tests\\price_interp.csv", "r", newline="") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            debug_price_list.append(row[4])
+
+    debug_price_list = debug_price_list[1:]
+
+    for i in range(3*390):
+        price = market.get_current_price("MMM")
+        test_price = Money(float(debug_price_list[i]))
+
+        assert price == test_price
+        market.next_tick()
+
+
+def test_loop_speed():
+    assets_symbol = [x.symbol for x in Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True))]
+    mt = Market(asset_context=assets_symbol, end_date=datetime(2015, 1, 30))
+    portfolio = mt.register_portfolio(1000*len(assets_symbol))
+
+    ASSET_COUNT = 100
+    for i in range(ASSET_COUNT):
+        portfolio.open_position_by_value(assets_symbol[i], 1000)
+
+    start_time = time.time()
+    LOOP_COUNT = 100
+    for i in range(LOOP_COUNT):
+        for position in portfolio.positions:
+            position.update()
+        mt.next_tick()
+
+    elapsed = time.time() - start_time
+    loop_time = (elapsed / LOOP_COUNT) * 1000
+    loop_position_time = loop_time / len(portfolio.positions) * 1000
+
+    assert loop_position_time <= 55
+    # print(f"Total time: {elapsed:.2f} s | Avg Time/Loop: {(elapsed / LOOP_COUNT) *1000:.2f} ms | Avg Time/Loop/Position: {(elapsed / LOOP_COUNT / len(portfolio.positions)) * 1000 * 1000:.0f} µs ")

@@ -6,8 +6,10 @@ class Money:
         if not isinstance(value, (int, float, Money)):
             raise TypeError(f"Value passed to Money object must be of type float, int or Money. Got type {type(value)}")
 
-        if isinstance(value, (int, float)):
-            self.cents = int(value * 100)
+        if isinstance(value, float):
+            self.cents = int(round(value * 100))
+        elif isinstance(value, int):
+            self.cents = value * 100
         else:
             self.cents = value.cents
 
@@ -17,7 +19,7 @@ class Money:
         if type(value) == int:
             _.cents = value
         elif type(value) == float:
-            _.cents = int(value)
+            _.cents = int(round(value))
         else:
             raise TypeError(f"Cannot create {type(cls).__name__} from cents if cents not of type int or float")
 

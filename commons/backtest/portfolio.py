@@ -55,6 +55,9 @@ class Portfolio:
         return True
 
     def process_open(self, position):
+        if position is None:
+            return
+
         if position.position_type == "long":
             self.cash -= position.open_value
             self.equity += position.nett_gain
@@ -123,6 +126,8 @@ class Position:
         position = cls(get_caller(inspect.stack()[1][0]))  # get_caller gets the portfolio object that called this position.
         market = position.portfolio.market
         current_price = market.get_current_price(symbol)
+        if current_price is None:
+            return None
         size = value / current_price
         position.open_position(symbol, size, current_price)
 
@@ -165,8 +170,21 @@ class Position:
             self.nett_gain = gross_gain - self.total_commission
 
     def update(self):
-        self.current_price = self.portfolio.market.get_current_price(self.symbol)
+        if not self.active:
+            return
+
+        price = self.portfolio.market.get_current_price(self.symbol)
+        if price is None:
+            self.terminate_early()
+            return
+
+        self.current_price = price
+
         self.current_value = self.current_price * self.size
         self.calculate_nett_gain()
 
         return self.nett_gain
+
+    def terminate_early(self):
+        self.active = False
+        print(f"{self.symbol} Opened on: {self.open_time} Terminated on {self.portfolio.market.time_now} due to insufficient price data")

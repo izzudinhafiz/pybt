@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 import alpaca_trade_api as tradeapi
 import os
 from commons.money import Money
-import csv
+from scipy.interpolate import interp1d
+import numpy as np
 
 pg_db.bind([Asset, Price, Financial])
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -35,6 +36,7 @@ class Market:
         self.update_day()
         self.get_today_prices()
         self.time_now = datetime.combine(self.date, self.open)
+        self._daily_prices = {}
 
     def run_simulation(self):
         print("START SIMULATION")
@@ -56,15 +58,12 @@ class Market:
         self.day_counter += 1
         if self.day_counter < len(self.calendar):
             self.update_day()
-            # self.get_today_prices()
+            self.get_today_prices()
             return True
         else:
             return False
 
     def next_tick(self):
-        # if self.tick_counter >= 387 or self.tick_counter == 0:
-        #     print(True)
-
         if self.time_now == self.today_close - timedelta(minutes=1):
             if self.next_day():
                 self.tick_counter = 0
@@ -88,11 +87,13 @@ class Market:
         self.today_open = datetime.combine(self.date, self.open)
 
     def get_today_prices(self):
-        min_timestamp = datetime.combine(self.date, self.session_open).timestamp()
-        max_timestamp = datetime.combine(self.date, self.session_close).timestamp()
+        min_timestamp = self.today_open
+        max_timestamp = self.today_close
 
         for asset in self.assets:
             self.prices[asset.symbol] = Price.select().where((Price.asset == asset) & (Price.time >= min_timestamp) & (Price.time <= max_timestamp))
+
+        self._daily_prices = {}
 
     def register_portfolio(self, start_value, **kwargs):
         new_portfolio = Portfolio(start_value, self.start_date, self.end_date, **kwargs)
@@ -100,46 +101,31 @@ class Market:
 
         return new_portfolio
 
-    def get_current_price(self, symbol):
-        try:
-            prices = self.prices[symbol]
-        except KeyError:
-            return None
+    def get_current_price(self, symbol: str) -> Money:
+        if symbol in self._daily_prices.keys():
+            return Money(round(float(self._daily_prices[symbol](self.tick_counter)), 3))
 
-        if len(prices) == 0:
-            return None
-
-        current_time = self.time_now
-        nearest_time = None
-        nearest_index = None
-        for index, price in enumerate(prices):
-            if price.time == current_time:
-                return Money(price.open)
-            if nearest_time is None:
-                nearest_time = price.time
-                nearest_index = index
-            elif abs(price.time - current_time) < abs(nearest_time - current_time):
-                nearest_time = price.time
-                nearest_index = index
-
-        if nearest_time > current_time:
-            if nearest_index != 0:
-                prev_index = nearest_index - 1
-                next_index = nearest_index
-            else:
-                return Money(prices[0].open)
+        if symbol in self.prices.keys():
+            if len(self.prices[symbol]) == 0:
+                return None
         else:
-            if nearest_index < len(prices) - 1:
-                prev_index = nearest_index
-                next_index = nearest_index + 1
-            else:
-                return Money(prices[-1].close)
+            return None
 
-        prev_price = prices[prev_index]
-        next_price = prices[next_index]
-        range_delta = (next_price.time - prev_price.time).seconds
-        time_delta = (current_time - prev_price.time).seconds
-        ratio = time_delta / range_delta
-        price_delta = next_price.open - prev_price.close
-        current_price = price_delta * ratio + prev_price.close
-        return Money(current_price)
+        open_time = self.today_open
+        close_time = self.today_close
+        asset_price = [x for x in self.prices[symbol] if x.time >= open_time and x.time <= close_time]
+        x_val = []
+        y_val = []
+        for i in range(len(asset_price)):
+            current_time = asset_price[i].time
+            current_close_price = asset_price[i].close
+            time_delta = current_time - open_time
+            minute_delta = time_delta.seconds // 60
+            x_val.append(minute_delta)
+            y_val.append(current_close_price)
+
+        interp_func = interp1d(x_val, y_val, fill_value="extrapolate")
+        self._daily_prices[symbol] = interp_func
+        current_val = round(float(interp_func(self.tick_counter)), 3)
+
+        return Money(current_val)
