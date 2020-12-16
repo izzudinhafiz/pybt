@@ -6,6 +6,8 @@ import warnings
 
 
 class Position:
+    commission_rate = 0.01
+
     def __init__(self, portfolio):
         self.portfolio = portfolio
         self.symbol = None
@@ -31,7 +33,6 @@ class Position:
         self.stop_loss = None
 
         self.nett_gain = None
-        self.commission_rate = 0.01
         self.total_commission = self.open_commission + self.close_commission
 
     @classmethod
