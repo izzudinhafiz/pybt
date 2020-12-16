@@ -35,7 +35,7 @@ class Position:
         self.total_commission = self.open_commission + self.close_commission
 
     @classmethod
-    def open_by_value(cls, symbol, value):
+    def open_by_value(cls, symbol, value, take_profit=None, stop_loss=None):
         if type(value) != Money:
             value = Money(value)
         position = cls(get_caller(inspect.stack()[1][0]))  # get_caller gets the portfolio object that called this position.
@@ -44,7 +44,7 @@ class Position:
         if current_price is None:
             return None
         size = value / current_price
-        position.open_position(symbol, size, current_price)
+        position.open_position(symbol, size, current_price, take_profit, stop_loss)
 
         return position
 
@@ -99,7 +99,7 @@ class Position:
         if should_close:
             return self.close_position(should_close)
 
-        self.current_value = self.current_price * self.size * self.total_commission
+        self.current_value = self.current_price * self.size - self.total_commission
         self.nett_gain = self.current_value - self.open_value
 
         return self.nett_gain
