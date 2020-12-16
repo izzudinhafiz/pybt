@@ -1,6 +1,3 @@
-from decimal import *
-
-
 class Money:
     def __init__(self, value):
         if not isinstance(value, (int, float, Money)):
@@ -134,3 +131,7 @@ if __name__ == '__main__':
 
     for comp in c:
         print(comp, Money(2) <= comp)
+
+    b += Money(5)
+
+    print(b)
