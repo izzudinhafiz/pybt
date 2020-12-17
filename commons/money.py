@@ -1,16 +1,27 @@
+from decimal import Decimal, ROUND_HALF_UP
+
+
 class Money:
-    def __init__(self, value):
-        if not isinstance(value, (int, float, Money)):
+    def __init__(self, value, debug=False):
+        if not isinstance(value, (int, float, Money, str)):
             raise TypeError(f"Value passed to Money object must be of type float, int or Money. Got type {type(value)}")
 
         if isinstance(value, float):
-            self.cents = int(round(value * 100))
+            decimalized = Decimal(str(value)).quantize(Decimal('1.11'), rounding=ROUND_HALF_UP) * 100
+            self.cents = int(decimalized)
         elif isinstance(value, int):
             self.cents = value * 100
+        elif isinstance(value, str):
+            float(value)
+            decimalized = Decimal(value).quantize(Decimal('1.11'), rounding=ROUND_HALF_UP) * 100
+            self.cents = int(decimalized)
         else:
             self.cents = value.cents
 
-    @classmethod
+        if debug:
+            print(self.cents)
+
+    @ classmethod
     def from_cents(cls, value):
         _ = Money(0)
         if type(value) == int:
@@ -159,21 +170,9 @@ class Money:
 
 
 if __name__ == '__main__':
-    a = [Money(2), Money(2.1), Money(2.1234), Money(Money(2))]
-    print(int(1.991))
-    print(int(0.99))
-    for money in a:
-        print(money)
+    print(Money(171.545, debug=True))
+    value = Decimal('171.545').quantize(Decimal('1.11'), rounding=ROUND_HALF_UP)
+    print(float(value))
+    print(float(value * 100))
 
-    b = Money(2.1234)
-    print(Money(2) + Money(2.1299))
-    print(Money(2) / 3)
-
-    c = [2, 2.0, 2.00, 2.01, 1.99, 1]
-
-    for comp in c:
-        print(comp, Money(2) <= comp)
-
-    b += Money(5)
-
-    print(b)
+    float('abs')
