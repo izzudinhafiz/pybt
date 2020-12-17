@@ -58,13 +58,13 @@ class Position:
 
         self.symbol = symbol
         self.size = size
-        self.open_price = Money(open_price)
-        self.current_price = Money(open_price)
+        self.open_price = open_price
+        self.current_price = open_price
         self.open_value = self.open_price * self.size
         self.open_time = self.portfolio.market.time_now
         self.active = True
         self.position_type = "long" if size > 0 else "short"
-        self.open_commission = Money(self.open_value * self.commission_rate).abs()
+        self.open_commission = self.open_value.abs() * self.commission_rate
         self.total_commission = self.open_commission
         self.current_value = self.current_price * self.size
         self.gain = self.current_value - self.open_value
