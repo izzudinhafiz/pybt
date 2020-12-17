@@ -19,22 +19,23 @@ class Portfolio:
         self.margin = start_value
         self._to_remove = []
         self.nett_gain = Money(0)
+        self.debug_mode = self.market.debug_mode
 
-    def open_position_by_value(self, symbol, value):
+    def open_position_by_value(self, symbol, value, take_profit=None, stop_loss=None):
         if self.can_open(value):
-            self.process_open(Position.open_by_value(symbol, value))
+            self.process_open(Position.open_by_value(symbol, value, take_profit=take_profit, stop_loss=stop_loss))
             return True
         return False
 
-    def open_position_by_size(self, symbol, size):
+    def open_position_by_size(self, symbol, size, take_profit=None, stop_loss=None):
         current_price = self.market.get_current_price(symbol)
         buy_value = current_price * size
         if self.can_open(buy_value):
-            self.process_open(Position.open_by_value(symbol, buy_value))
+            self.process_open(Position.open_by_value(symbol, buy_value, take_profit=take_profit, stop_loss=stop_loss))
             return True
         return False
 
-    def open_position_by_ratio(self, symbol, ratio):
+    def open_position_by_ratio(self, symbol, ratio, take_profit=None, stop_loss=None):
         if ratio > 0:
             buy_value = self.cash * ratio
         elif ratio < 0:
@@ -42,7 +43,7 @@ class Portfolio:
         else:
             return False
         if self.can_open(buy_value):
-            self.process_open(Position.open_by_value(symbol, buy_value))
+            self.process_open(Position.open_by_value(symbol, buy_value, take_profit=take_profit, stop_loss=stop_loss))
             return True
         return False
 
@@ -74,6 +75,11 @@ class Portfolio:
         self.cash += position.close_value - position.close_commission
         self.equity -= position.close_value
         self._to_remove.append(position)
+        self.closed_positions.append(position)
+        self.open_positions.remove(position)
+
+        if self.debug_mode == 2:
+            print(f"[{self.market.time_now}]Cash: {self.cash} Equity: {self.equity} Nett Gain: {self.nett_gain}")
 
     def update(self):
         total_value = Money(0)
@@ -84,12 +90,11 @@ class Portfolio:
             else:
                 self.process_close(position)
 
-        for index in reversed(range(len(self._to_remove))):
-            self.closed_positions.append(self.open_positions.pop(index))
         self._to_remove = []
         self.equity = total_value
         self.margin = self.cash + self.equity
         self.nett_gain = self.cash + self.equity - self.start_value
+
         self.score_stock()
         self.optimizer()
         self.execute()
@@ -104,4 +109,15 @@ class Portfolio:
         pass
 
     def end_simulation(self):
-        pass
+        for position in self.open_positions:
+            position.update()
+            if position.active == True:
+                position.close_position("end_of_simulation")
+
+            self.process_close(position)
+
+        self._to_remove = []
+        self.equity = Money(0)
+        self.margin = self.cash
+        self.nett_gain = self.cash + self.equity - self.start_value
+        print(f"END SIMULATION - Cash: {self.cash}, Equity: {self.equity}, Margin: {self.margin}, Nett Gain: {self.nett_gain}")
