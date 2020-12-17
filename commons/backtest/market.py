@@ -18,7 +18,8 @@ class Market:
     market_time = MarketTime()
     mt_tz = market_time.market_tz
 
-    def __init__(self, start_date: datetime = None, end_date: datetime = None, asset_context: list = None):
+    def __init__(self, start_date: datetime = None, end_date: datetime = None, asset_context: list = None, debug_mode=False):
+        self.debug_mode = debug_mode
         self.start_date = start_date if start_date is not None else datetime(2015, 1, 1)
         self.end_date = end_date if end_date is not None else datetime.utcnow()
 
@@ -53,8 +54,6 @@ class Market:
 
         for trader in self.traders:
             trader.end_simulation()
-
-        print("END SIMULATION")
 
     def next_day(self):
         self.day_counter += 1
