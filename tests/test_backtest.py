@@ -82,13 +82,13 @@ def test_loop_speed():
     start_time = time.time()
     LOOP_COUNT = 100
     for i in range(LOOP_COUNT):
-        for position in portfolio.positions:
+        for position in portfolio.open_positions:
             position.update()
         mt.next_tick()
 
     elapsed = time.time() - start_time
     loop_time = (elapsed / LOOP_COUNT) * 1000
-    loop_position_time = loop_time / len(portfolio.positions) * 1000
+    loop_position_time = loop_time / len(portfolio.open_positions) * 1000
 
-    assert loop_position_time <= 55
+    assert loop_position_time <= 75
     # print(f"Total time: {elapsed:.2f} s | Avg Time/Loop: {(elapsed / LOOP_COUNT) *1000:.2f} ms | Avg Time/Loop/Position: {(elapsed / LOOP_COUNT / len(portfolio.positions)) * 1000 * 1000:.0f} µs ")

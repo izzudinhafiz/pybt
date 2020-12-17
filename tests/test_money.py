@@ -54,3 +54,20 @@ def test_arithmetic():
     assert m1 * 2.3333333 == Money(9.33)
     with pytest.raises(TypeError):
         m1 * m2
+
+
+def test_incr_decr():
+    m1 = Money(2)
+    m2 = Money(2)
+    m3 = Money(2)
+    m4 = Money(2)
+
+    m1 += Money(1)
+    m2 += 1
+    m3 -= Money(1)
+    m4 -= 1
+
+    assert m1 == 3
+    assert m2 == 3
+    assert m3 == 1
+    assert m4 == 1
