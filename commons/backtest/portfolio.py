@@ -8,13 +8,17 @@ from commons.backtest.position import Position
 
 class Portfolio:
     def __init__(self, start_value: float = None, start_date: datetime = None, end_date: datetime = None):
+        self.start_value = Money(start_value)
         self.cash = Money(start_value)
-        self.equity = Money(start_value)
-        self.positions = []
+        self.equity = Money(0)
+        self.open_positions = []
+        self.closed_positions = []
         self.market = get_caller(inspect.stack()[1][0])
         self.start_date = start_date if start_date is not None else self.market.start_date
         self.end_date = end_date if end_date is not None else self.market.end_date
         self.margin = start_value
+        self._to_remove = []
+        self.nett_gain = Money(0)
 
     def open_position_by_value(self, symbol, value):
         if self.can_open(value):
@@ -47,10 +51,12 @@ class Portfolio:
             value = Money(value)
 
         if value > 0:
-            if self.cash < value:
+            nett_cost = value + (value * Position.commission_rate)
+            if self.cash < nett_cost:
                 return False
         else:
-            if self.margin < value:
+            open_commission = value.abs() * Position.commission_rate
+            if self.margin < value.abs() or self.cash < open_commission:
                 return False
 
         return True
@@ -58,26 +64,32 @@ class Portfolio:
     def process_open(self, position):
         if position is None:
             return
-
-        if position.position_type == "long":
-            self.cash -= position.open_value
-            self.equity += position.nett_gain
-        elif position.position_type == "short":
-            self.cash += position.open_value
-            self.equity += position.nett_gain
-        else:
-            raise AttributeError(f"Position type is {position.position_type}. Invalid type")
-        self.positions.append(position)
+        self.cash -= position.open_value + position.open_commission
+        self.equity += position.current_value
+        self.margin = self.cash + self.equity
+        self.nett_gain = self.cash + self.equity - self.start_value
+        self.open_positions.append(position)
 
     def process_close(self, position):
-        pass
+        self.cash += position.close_value - position.close_commission
+        self.equity -= position.close_value
+        self._to_remove.append(position)
 
     def update(self):
-        total_value = 0
-        for position in self.positions:
-            total_value += position.current_value
+        total_value = Money(0)
+        for position in self.open_positions:
+            position.update()
+            if position.active == True:
+                total_value += position.current_value
+            else:
+                self.process_close(position)
 
+        for index in reversed(range(len(self._to_remove))):
+            self.closed_positions.append(self.open_positions.pop(index))
+        self._to_remove = []
         self.equity = total_value
+        self.margin = self.cash + self.equity
+        self.nett_gain = self.cash + self.equity - self.start_value
         self.score_stock()
         self.optimizer()
         self.execute()
