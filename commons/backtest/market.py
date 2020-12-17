@@ -25,6 +25,8 @@ class Market:
         if asset_context is None:
             self.assets = Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True)).order_by(Asset.symbol.asc())
         else:
+            if not isinstance(asset_context, list):
+                raise TypeError(f"asset_context must be a list. Got type {type(asset_context)}")
             self.assets = Asset.select().where(Asset.symbol << asset_context)
         self.traders = []
         self.prices = {}
