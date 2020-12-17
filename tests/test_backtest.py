@@ -8,8 +8,7 @@ if __name__ == "__main__":
 
 from commons.money import Money
 from commons.backtest import Market
-from datetime import datetime, timedelta, time
-import pytest
+from datetime import datetime, time
 import csv
 import os
 import time
@@ -64,8 +63,9 @@ def test_current_price():
 
     for i in range(3*390):
         price = market.get_current_price("MMM")
-        test_price = Money(float(debug_price_list[i]))
+        test_price = Money(debug_price_list[i])
 
+        print(market.time_now, test_price, price)
         assert price == test_price
         market.next_tick()
 
@@ -90,5 +90,6 @@ def test_loop_speed():
     loop_time = (elapsed / LOOP_COUNT) * 1000
     loop_position_time = loop_time / len(portfolio.open_positions) * 1000
 
-    assert loop_position_time <= 75
+    print(f"Loop Time: {loop_position_time:.0f} µs")
+    assert loop_position_time <= 65
     # print(f"Total time: {elapsed:.2f} s | Avg Time/Loop: {(elapsed / LOOP_COUNT) *1000:.2f} ms | Avg Time/Loop/Position: {(elapsed / LOOP_COUNT / len(portfolio.positions)) * 1000 * 1000:.0f} µs ")
