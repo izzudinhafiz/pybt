@@ -10,6 +10,7 @@ class Position:
 
     def __init__(self, portfolio):
         self.portfolio = portfolio
+        self.debug_mode = self.portfolio.debug_mode
         self.symbol = None
         self.size = None
         self.position_type = None
@@ -68,9 +69,10 @@ class Position:
         self.total_commission = self.open_commission
         self.current_value = self.current_price * self.size
         self.gain = self.current_value - self.open_value
+        self.process_tp_sl(take_profit, stop_loss)
 
-        self.take_profit = take_profit
-        self.stop_loss = stop_loss
+        if self.debug_mode >= 1:
+            print(f"[{self.open_time}][{self.symbol}] {self.position_type} position opened. Price: {self.open_price} TP: {self.take_profit} SL: {self.stop_loss}")
 
         return self
 
@@ -90,7 +92,42 @@ class Position:
         else:
             self.close_type = close_type
 
+        if self.debug_mode >= 1:
+            print(f"[{self.close_time}][{self.symbol}][{self.close_type}] position closed. Price {self.close_price} Nett Gain {self.gain - self.total_commission}")
         return self
+
+    def process_tp_sl(self, take_profit, stop_loss):
+        if isinstance(take_profit, (int, float, Money)):
+            self.take_profit = take_profit if isinstance(take_profit, Money) else Money(take_profit)
+        elif isinstance(take_profit, tuple):
+            if take_profit[0] == "percent":
+                if take_profit[1] < 1:
+                    raise ValueError(f"take_profit percentage mode requires value greater than 1")
+                if self.position_type == "long":
+                    profit_level = self.open_price * take_profit[1]
+                else:
+                    profit_level = self.open_price - self.open_price * (take_profit[1] - 1)
+                self.take_profit = profit_level
+            else:
+                raise ValueError(f"{take_profit[0]} unsupported. take_profit only supports 'percent' mode")
+        else:
+            self.take_profit = None
+
+        if isinstance(stop_loss, (int, float, Money)):
+            self.stop_loss = stop_loss if isinstance(stop_loss, Money) else Money(stop_loss)
+        elif isinstance(stop_loss, tuple):
+            if stop_loss[0] == "percent":
+                if stop_loss[1] > 1:
+                    raise ValueError(f"stop_loss percentage mode requires value less than 1")
+                if self.position_type == "long":
+                    loss_level = self.open_price * stop_loss[1]
+                else:
+                    loss_level = self.open_price - self.open_price * (stop_loss[1] - 1)
+                self.stop_loss = loss_level
+            else:
+                raise ValueError(f"{stop_loss[0]} unsupported. stop_loss only supports 'percent' mode")
+        else:
+            self.stop_loss = None
 
     def update(self):
         if not self.active:
