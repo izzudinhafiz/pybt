@@ -33,15 +33,24 @@ class Money:
             raise TypeError(f"Cannot add Money object with type {type(other)}")
         return Money.from_cents(self.cents + other.cents)
 
+    def __radd__(self, other):
+        return self + other
+
     def __sub__(self, other):
         if type(other) != Money:
             raise TypeError(f"Cannot subtract Money object with type {type(other)}")
         return Money.from_cents(self.cents - other.cents)
 
+    def __rsub__(self, other):
+        return self - other
+
     def __mul__(self, other):
         if not isinstance(other, (int, float)):
             return NotImplemented
         return Money.from_cents(self.cents * other)
+
+    def __rmul__(self, other):
+        return self * other
 
     def __truediv__(self, other):
         if not isinstance(other, (int, float, Money)):
@@ -114,6 +123,39 @@ class Money:
 
     def __ge__(self, other):
         return self > other or self == other
+
+    def __iadd__(self, other):
+        if not isinstance(other, (int, float, Money)):
+            return NotImplemented
+
+        if isinstance(other, Money):
+            self.cents += other.cents
+
+        if isinstance(other, float):
+            self.cents = self.cents + int(round(other * 100))
+
+        if isinstance(other, int):
+            self.cents = self.cents + other * 100
+
+        return self
+
+    def __isub__(self, other):
+        if not isinstance(other, (int, float, Money)):
+            return NotImplemented
+
+        if isinstance(other, Money):
+            self.cents = self.cents - other.cents
+
+        if isinstance(other, float):
+            self.cents = self.cents - int(round(other * 100))
+
+        if isinstance(other, int):
+            self.cents = self.cents - other * 100
+
+        return self
+
+    def abs(self):
+        return Money.from_cents(abs(self.cents))
 
 
 if __name__ == '__main__':
