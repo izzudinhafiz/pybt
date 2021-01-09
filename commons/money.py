@@ -2,9 +2,11 @@ from decimal import Decimal, ROUND_HALF_UP
 
 
 class Money:
-    def __init__(self, value, debug=False):
-        if not isinstance(value, (int, float, Money, str)):
-            raise TypeError(f"Value passed to Money object must be of type float, int or Money. Got type {type(value)}")
+    __slots__ = ('cents',)
+
+    def __init__(self, value):
+        # if not isinstance(value, (int, float, Money, str)):
+        #     raise TypeError(f"Value passed to Money object must be of type float, int or Money. Got type {type(value)}")
 
         if isinstance(value, float):
             decimalized = Decimal(str(value)).quantize(Decimal('1.11'), rounding=ROUND_HALF_UP) * 100
@@ -17,9 +19,6 @@ class Money:
             self.cents = int(decimalized)
         else:
             self.cents = value.cents
-
-        if debug:
-            print(self.cents)
 
     @ classmethod
     def from_cents(cls, value):
@@ -40,9 +39,12 @@ class Money:
         return f"{self.cents / 100.0:.2f}"
 
     def __add__(self, other):
-        if type(other) != Money:
+        if isinstance(other, Money):
+            return Money.from_cents(self.cents + other.cents)
+        elif isinstance(other, int):
+            return self + Money(other)
+        else:
             raise TypeError(f"Cannot add Money object with type {type(other)}")
-        return Money.from_cents(self.cents + other.cents)
 
     def __radd__(self, other):
         return self + other
@@ -170,9 +172,7 @@ class Money:
 
 
 if __name__ == '__main__':
-    print(Money(171.545, debug=True))
+    print(Money(171.545))
     value = Decimal('171.545').quantize(Decimal('1.11'), rounding=ROUND_HALF_UP)
     print(float(value))
     print(float(value * 100))
-
-    float('abs')
