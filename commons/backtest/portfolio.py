@@ -7,7 +7,7 @@ from commons.backtest.position import Position
 
 
 class Portfolio:
-    def __init__(self, start_value: float = None, start_date: datetime = None, end_date: datetime = None):
+    def __init__(self, start_value: float = None, start_date: datetime = None, end_date: datetime = None, **kwargs):
         self.start_value = Money(start_value)
         self.cash = Money(start_value)
         self.equity = Money(0)
@@ -19,6 +19,22 @@ class Portfolio:
         self.margin = start_value
         self._to_remove = []
         self.nett_gain = Money(0)
+        self.scorer = None
+        self.optimizer = None
+
+        for args in kwargs.items():
+            key = args[0]
+            value = args[1]
+
+            if key == "scorer":
+                self.scorer = value(self, self.market)
+
+            elif key == "optimizer":
+                self.optimizer = value(self)
+
+            else:
+                raise AttributeError(f"Unknown keyword argument '{key}'")
+
         self.debug_mode = self.market.debug_mode
 
     def open_position_by_value(self, symbol, value, take_profit=None, stop_loss=None):
@@ -95,15 +111,13 @@ class Portfolio:
         self.margin = self.cash + self.equity
         self.nett_gain = self.cash + self.equity - self.start_value
 
-        self.score_stock()
-        self.optimizer()
-        self.execute()
+        data = None
+        # Run scorer and optimizer
+        if self.scorer is not None:
+            data = self.scorer.execute()
 
-    def optimizer(self):
-        pass
-
-    def score_stock(self):
-        pass
+        if self.optimizer is not None:
+            self.optimizer.execute(data)
 
     def execute(self):
         pass
@@ -121,3 +135,10 @@ class Portfolio:
         self.margin = self.cash
         self.nett_gain = self.cash + self.equity - self.start_value
         print(f"END SIMULATION - Cash: {self.cash}, Equity: {self.equity}, Margin: {self.margin}, Nett Gain: {self.nett_gain}")
+
+    def get_positions(self, symbol):
+        open_position = [x for x in self.open_positions if x.symbol == symbol]
+        if len(open_position) != 0:
+            return open_position
+
+        return None
