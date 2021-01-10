@@ -1,45 +1,21 @@
 from commons.models.market_model import Asset, Price, Financial, pg_db
-from commons.backtest import Market
+from commons.backtest.indicators import SMAIndicator
 from datetime import datetime
-from commons.money import Money
-import talib
-import numpy as np
+from commons.backtest import Scorer, Optimizer, Market
+
 pg_db.bind([Asset, Price, Financial])
 
 assets_symbol = [x.symbol for x in Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True))]
-mt = Market(asset_context=assets_symbol, start_date=datetime(2020, 1, 1), end_date=datetime(2020, 1, 31), debug_mode=1)
+mt = Market(asset_context=assets_symbol, start_date=datetime(2020, 1, 1), end_date=datetime(2020, 1, 31), debug_mode=False)
 
 
-class Indicator:
-    def __init__(self, symbol, duration=None):
-        self.symbol = symbol
-        self.duration = duration
+class MAScorer(Scorer):
 
-
-class MAIndicator(Indicator):
-    def __init__(self, symbol, duration):
-        super().__init__(symbol, duration)
-        self.data = []
-
-    def update(self, current_price):
-        if len(self.data) >= self.duration:
-            self.data.pop(0)
-        self.data.append(current_price.cents/100)
-
-        if len(self.data) == self.duration:
-            return Money(talib.SMA(np.asarray(self.data))[-1])
-        else:
-            return None
-
-
-class Scorer:
-
-    def __init__(self, portfolio, market):
-        self.portfolio = portfolio
-        self.market = market
+    def __init__(self):
+        super().__init__()
         self.indicators = []
-        self.indicators.append(MAIndicator("AAPL", 30))
-        self.indicators.append(MAIndicator("GOOGL", 30))
+        for symbol in self.market.active_symbols[:10]:
+            self.indicators.append(SMAIndicator(symbol, 30))
 
     def execute(self):
         '''
@@ -49,6 +25,8 @@ class Scorer:
 
         for indicator in self.indicators:
             cur_price = self.market.get_current_price(indicator.symbol)
+            if cur_price is None:
+                continue
             average = indicator.update(cur_price)
             if average is None:
                 continue
@@ -64,10 +42,11 @@ class Scorer:
         return data
 
 
-class Optimizer:
+class BasicOptimizer(Optimizer):
 
-    def __init__(self, portfolio):
-        self.portfolio = portfolio
+    def __init__(self):
+        super().__init__()
+        self.custom_data = "whatever"
 
     def execute(self, data):
         '''
@@ -85,6 +64,6 @@ class Optimizer:
                 self.portfolio.open_position_by_value(symbol, 1000)
 
 
-mt.register_portfolio(100_000, scorer=Scorer, optimizer=Optimizer)
+mt.register_portfolio(100_000, scorer=MAScorer, optimizer=BasicOptimizer)
 
 mt.run_simulation()
