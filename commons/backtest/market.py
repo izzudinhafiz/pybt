@@ -123,64 +123,35 @@ class Market:
             return current_val
 
         # Some sanity checks to make sure we have some price data
-        if symbol in self.prices.keys():
-            if len(self.prices[symbol]) == 0:
-                return None
-        else:
+        if symbol not in self.prices.keys():
             return None
+            # if len(self.prices[symbol]) == 0:
+            # return None
+        # else:
+            # return None
+        try:
+            # If we get here, we need to create an interp function before returning the current price
+            # We save that interp function so we dont have to recreate it again for that day
+            open_time = self.today_open
+            close_time = self.today_close
+            asset_price = [x for x in self.prices[symbol] if x.time >= open_time and x.time <= close_time]
+            x_val = []
+            y_val = []
+            for i in range(len(asset_price)):
+                current_time = asset_price[i].time
+                current_close_price = asset_price[i].close
+                time_delta = current_time - open_time
+                minute_delta = time_delta.seconds // 60
+                x_val.append(minute_delta)
+                y_val.append(current_close_price)
 
-        # If we get here, we need to create an interp function before returning the current price
-        # We save that interp function so we dont have to recreate it again for that day
-        open_time = self.today_open
-        close_time = self.today_close
-        asset_price = [x for x in self.prices[symbol] if x.time >= open_time and x.time <= close_time]
-        x_val = []
-        y_val = []
-        for i in range(len(asset_price)):
-            current_time = asset_price[i].time
-            current_close_price = asset_price[i].close
-            time_delta = current_time - open_time
-            minute_delta = time_delta.seconds // 60
-            x_val.append(minute_delta)
-            y_val.append(current_close_price)
+            interp_func = interp1d(x_val, y_val, fill_value="extrapolate")
+            current_val = round(float(interp_func(self.tick_counter)), 3)
+            current_val = Money(current_val)
+            self._daily_prices[symbol] = (interp_func, (self.total_tick, current_val))
 
-        interp_func = interp1d(x_val, y_val, fill_value="extrapolate")
-        current_val = round(float(interp_func(self.tick_counter)), 3)
-        current_val = Money(current_val)
-        self._daily_prices[symbol] = (interp_func, (self.total_tick, current_val))
-
-        return current_val
-
-    def _get_current_price(self, symbol: str) -> Money:
-        # If already have interpolation function for that key, call that function and return the value
-        # _daily_prices gets cleared by get_today_prices function
-        if symbol in self._daily_prices.keys():
-            return Money(round(float(self._daily_prices[symbol](self.tick_counter)), 3))
-
-        # Some sanity checks to make sure we have some price data
-        if symbol in self.prices.keys():
-            if len(self.prices[symbol]) == 0:
-                return None
-        else:
+            return current_val
+        except ValueError as e:
+            del self.prices[symbol]
+            print(e)
             return None
-
-        # If we get here, we need to create an interp function before returning the current price
-        # We save that interp function so we dont have to recreate it again for that day
-        open_time = self.today_open
-        close_time = self.today_close
-        asset_price = [x for x in self.prices[symbol] if x.time >= open_time and x.time <= close_time]
-        x_val = []
-        y_val = []
-        for i in range(len(asset_price)):
-            current_time = asset_price[i].time
-            current_close_price = asset_price[i].close
-            time_delta = current_time - open_time
-            minute_delta = time_delta.seconds // 60
-            x_val.append(minute_delta)
-            y_val.append(current_close_price)
-
-        interp_func = interp1d(x_val, y_val, fill_value="extrapolate")
-        self._daily_prices[symbol] = interp_func
-        current_val = round(float(interp_func(self.tick_counter)), 3)
-
-        return Money(current_val)
