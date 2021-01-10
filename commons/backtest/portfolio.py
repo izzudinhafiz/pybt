@@ -27,10 +27,10 @@ class Portfolio:
             value = args[1]
 
             if key == "scorer":
-                self.scorer = value(self, self.market)
+                self.scorer = value()
 
             elif key == "optimizer":
-                self.optimizer = value(self)
+                self.optimizer = value()
 
             else:
                 raise AttributeError(f"Unknown keyword argument '{key}'")
