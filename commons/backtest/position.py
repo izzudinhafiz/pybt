@@ -71,7 +71,7 @@ class Position:
         self.gain = self.current_value - self.open_value
         self.process_tp_sl(take_profit, stop_loss)
 
-        if self.debug_mode >= 1:
+        if self.debug_mode:
             print(f"[{self.open_time}][{self.symbol}] {self.position_type} position opened. Price: {self.open_price} TP: {self.take_profit} SL: {self.stop_loss}")
 
         return self
