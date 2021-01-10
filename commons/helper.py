@@ -18,3 +18,13 @@ def get_caller(frame_stack):
         # return the class instance that called
         return instance
     return None
+
+
+def set_object_by_caller(caller_type):
+    stacks = inspect.stack()
+    for stack in stacks:
+        caller = get_caller(stack[0])
+        if isinstance(caller, caller_type):
+            return caller
+
+    return None
