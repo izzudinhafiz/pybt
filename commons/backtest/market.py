@@ -40,6 +40,7 @@ class Market:
         self.get_today_prices()
         self.time_now = datetime.combine(self.date, self.open)
         self._daily_prices = {}
+        self.active_symbols = [x.symbol for x in self.assets]
 
     def run_simulation(self):
         print("START SIMULATION")
@@ -103,15 +104,68 @@ class Market:
         return new_portfolio
 
     def get_current_price(self, symbol: str) -> Money:
+        # Check if we have saved data for the pricing
+        # _daily_prices gets cleared by get_today_prices function
         if symbol in self._daily_prices.keys():
-            return Money(round(float(self._daily_prices[symbol](self.tick_counter)), 3))
+            interp_func, latest_tick_data = self._daily_prices[symbol]
+            tick_counter, price = latest_tick_data
 
+            # Check if we have the current price already calculated
+            if self.tick_counter == tick_counter:
+                return price
+
+            # We dont have the latest tick data, so we calculate it based on the interp function
+            current_val = Money(round(float(interp_func(self.tick_counter)), 3))
+
+            # We save that calculated value so we dont have to recalc if we get asked again
+            self._daily_prices[symbol] = (interp_func, (self.tick_counter, current_val))
+
+            return current_val
+
+        # Some sanity checks to make sure we have some price data
         if symbol in self.prices.keys():
             if len(self.prices[symbol]) == 0:
                 return None
         else:
             return None
 
+        # If we get here, we need to create an interp function before returning the current price
+        # We save that interp function so we dont have to recreate it again for that day
+        open_time = self.today_open
+        close_time = self.today_close
+        asset_price = [x for x in self.prices[symbol] if x.time >= open_time and x.time <= close_time]
+        x_val = []
+        y_val = []
+        for i in range(len(asset_price)):
+            current_time = asset_price[i].time
+            current_close_price = asset_price[i].close
+            time_delta = current_time - open_time
+            minute_delta = time_delta.seconds // 60
+            x_val.append(minute_delta)
+            y_val.append(current_close_price)
+
+        interp_func = interp1d(x_val, y_val, fill_value="extrapolate")
+        current_val = round(float(interp_func(self.tick_counter)), 3)
+        current_val = Money(current_val)
+        self._daily_prices[symbol] = (interp_func, (self.total_tick, current_val))
+
+        return current_val
+
+    def _get_current_price(self, symbol: str) -> Money:
+        # If already have interpolation function for that key, call that function and return the value
+        # _daily_prices gets cleared by get_today_prices function
+        if symbol in self._daily_prices.keys():
+            return Money(round(float(self._daily_prices[symbol](self.tick_counter)), 3))
+
+        # Some sanity checks to make sure we have some price data
+        if symbol in self.prices.keys():
+            if len(self.prices[symbol]) == 0:
+                return None
+        else:
+            return None
+
+        # If we get here, we need to create an interp function before returning the current price
+        # We save that interp function so we dont have to recreate it again for that day
         open_time = self.today_open
         close_time = self.today_close
         asset_price = [x for x in self.prices[symbol] if x.time >= open_time and x.time <= close_time]
