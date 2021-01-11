@@ -14,7 +14,7 @@ A backtesting framework for stock trading algorithm with the following aim
 
 ### Basic Usage
 
-```
+```python
 from commons.backtest import Market
 
 market = Market(asset_context=["AAPL", "GOOGL"])
@@ -24,7 +24,7 @@ You only need to supply Market with `asset_context` which is the list of assets 
 
 ### Specifiying Start/End Date
 
-```
+```python
 from datetime import datetime
 
 market = Market(asset_context=["AAPL", "GOOGL"], start_date=datetime(2020, 1, 1), end_date=datetime(2020, 1, 31))
@@ -36,7 +36,7 @@ If you do not, `start_date` defaults to an arbitary `datetime(2015, 1, 1)` and `
 
 ### Creating a Portfolio
 
-```
+```python
 market.register_portfolio(1000000)
 ```
 
@@ -52,7 +52,7 @@ You then create a custom class that inherits from `Optimizer` and specify (at a 
 
 `execute` method gets called for every timestep in the simulation
 
-```
+```python
 from commons.backtest import Optimizer
 
 class MyStrategy(Optimizer):
@@ -64,7 +64,7 @@ market.register_portfolio(100000, optimizer=MyStrategy)
 
 #### Coin Flipping Buy/Sell Strategy
 
-```
+```python
 import random
 
 class CoinFlipStrategy(Optimizer):
