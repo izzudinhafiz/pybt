@@ -6,8 +6,8 @@ A backtesting framework for stock trading algorithm with the following aim
 - [x] Fast simulation (500 indicators, 10,000 timestep (daily: 40 years, minute: 1.25 years) in 10 minutes)
 - [ ] Multiple frequency ability (daily, 1minute, 5minute, 1hour etc.)
 - [ ] Multiple strategy simulation at once
-- [ ] Simple to implement (remove complexity to setup for beginners. MINIMAL boilerplate codes)
-- [ ] Extensible implementation (allows more complex setup for more advanced users)
+- [x] Simple to implement (remove complexity to setup for beginners. MINIMAL boilerplate codes)
+- [x] Extensible implementation (allows more complex setup for more advanced users)
 - [ ] Interactive preview of simulation data
 
 ## Usage
@@ -71,7 +71,7 @@ class CoinFlipStrategy(Optimizer):
 
 	def execute(self, data):
 		for ticker in self.portfolio.asset_context:
-			coin_flip = random.randint(0, 2) # If 0, we dont buy, if 1, we buy
+		   coin_flip = random.randint(0, 2) # If 0, we dont buy, if 1, we buy
 			if coin_flip:
 				self.portfolio.open_position_by_value(ticker, 100)
 ```
