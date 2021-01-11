@@ -56,8 +56,8 @@ You then create a custom class that inherits from `Optimizer` and specify (at a 
 from commons.backtest import Optimizer
 
 class MyStrategy(Optimizer):
-	def execute(self, data):
-		# Do Something Here
+    def execute(self, data):
+        # Do Something Here
 
 market.register_portfolio(100000, optimizer=MyStrategy)
 ```
@@ -69,11 +69,11 @@ import random
 
 class CoinFlipStrategy(Optimizer):
 
-	def execute(self, data):
-		for ticker in self.portfolio.asset_context:
-		   coin_flip = random.randint(0, 2) # If 0, we dont buy, if 1, we buy
-			if coin_flip:
-				self.portfolio.open_position_by_value(ticker, 100)
+    def execute(self, data):
+        for ticker in self.portfolio.asset_context:
+           coin_flip = random.randint(0, 2) # If 0, we dont buy, if 1, we buy
+            if coin_flip:
+                self.portfolio.open_position_by_value(ticker, 100)
 ```
 
 ### Optimizers and Scorers
