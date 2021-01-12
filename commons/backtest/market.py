@@ -1,12 +1,14 @@
 from commons.markettime import MarketTime
 from commons.models.market_model import Asset, Price, Financial, pg_db, sq_db
 from commons.backtest.portfolio import Portfolio
+from commons.backtest.datapack import Calendar
 from datetime import datetime, timedelta
 import alpaca_trade_api as tradeapi
 import os
 from commons.money import Money
 from scipy.interpolate import interp1d
 import numpy as np
+import pandas as pd
 
 pg_db.bind([Asset, Price, Financial])
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -26,29 +28,12 @@ class Market:
         self.test_mode = test_mode
         self.traders = []
         self.prices = {}
-
-        # Data Context
-        # TODO: This needs to be generalized to accept different data source
-        if asset_context is None:
-            self.assets = Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True)).order_by(Asset.symbol.asc())
-        else:
-            if not isinstance(asset_context, list):
-                raise TypeError(f"asset_context must be a list of symbols. Got type {type(asset_context)}")
-            self.assets = Asset.select().where(Asset.symbol << asset_context)
-        self.calendar = api.get_calendar(start=self.start_date.date().isoformat(), end=self.mt_tz.localize(self.end_date).date().isoformat())
-
-        self.active_symbols = [x.symbol for x in self.assets]
+        self._daily_prices = {}
 
         # Timing Context
         self.day_counter = 0
         self.tick_counter = 0
         self.total_tick = 0
-
-        # Instatiation Context
-        self._update_day()
-        self._get_today_prices()
-        self.time_now = datetime.combine(self.date, self.open)
-        self._daily_prices = {}
 
         # Frequency Context
         if self.frequency == "1minute":
@@ -63,7 +48,44 @@ class Market:
         if self.test_mode:
             self._test_date_list = []
 
+        # Data Context
+        # TODO: This needs to be generalized to accept different data source
+        if asset_context is None:
+            self.assets = Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True)).order_by(Asset.symbol.asc())
+        else:
+            if not isinstance(asset_context, list):
+                raise TypeError(f"asset_context must be a list of symbols. Got type {type(asset_context)}")
+            self.assets = Asset.select().where(Asset.symbol << asset_context)
+        self.active_symbols = [x.symbol for x in self.assets]
+
+        self.calendar = None
+        self.time_now = None
+        self._fully_initialized = False
+
+    def load_calendar_data(self, source: str, **kwargs):
+        if source == "alpaca":
+            api_key = kwargs.get("api_key", None)
+            secret_key = kwargs.get("secret_key", None)
+            start_date = kwargs.get("start_date", self.start_date)
+            end_date = kwargs.get("end_date", self.end_date)
+
+            self.calendar = Calendar.load_from_alpaca(api_key, secret_key, start_date=start_date, end_date=end_date)
+        elif source == "dataframe":
+            data = kwargs.get("data", None)
+            if not isinstance(data, pd.DataFrame):
+                raise TypeError(f"df should be type pandas.DataFrame. Got {type(data)} instead")
+            self.calendar = Calendar.load_from_pandas(data)
+        else:
+            raise ValueError(f"source should be 'alpaca' or 'pandas'. Got '{source}' instead")
+
+        self._update_day()
+        self._get_today_prices()
+        self.time_now = datetime.combine(self.date, self.open)
+        self._fully_initialized = True
+
     def run_simulation(self):
+        if not self._fully_initialized:
+            raise RuntimeError(f"Incomplete initialization. Must load calendar data and price data first")
         print("START SIMULATION")
         # RUN ONCE
         while True:
@@ -77,6 +99,7 @@ class Market:
 
         for trader in self.traders:
             trader.end_simulation()
+        print("SIMULATION ENDED")
 
     def _next_day(self):
         self.day_counter += 1
@@ -110,8 +133,6 @@ class Market:
         self.date = self.today.date
         self.open = self.today.open
         self.close = self.today.close
-        self.session_open = self.today.session_open
-        self.session_close = self.today.session_close
 
         self.today_close = datetime.combine(self.date, self.close)
         self.today_open = datetime.combine(self.date, self.open)

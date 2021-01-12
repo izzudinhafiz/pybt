@@ -29,6 +29,7 @@ def test_portfolio_long_position():
             portfolio_label_data.append(row)
 
     mt = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    mt.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
     portfolio = mt.register_portfolio(100_000)
     portfolio.open_position_by_size("MMM", 500)
 
@@ -54,6 +55,7 @@ def test_portfolio_short_position():
             portfolio_label_data.append(row)
 
     mt = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    mt.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
     portfolio = mt.register_portfolio(100_000)
     portfolio.open_position_by_size("MMM", -500)
 

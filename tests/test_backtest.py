@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
 from commons.money import Money
 from commons.backtest import Market
-from datetime import datetime, time
+from datetime import datetime, time, date
 import csv
 import os
 import time
@@ -22,18 +22,19 @@ api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.mark
 
 
 def test_init():
-    market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3), test_mode=True)
+    market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
     first_day = market.calendar[0]
     last_day = market.calendar[-1]
 
-    assert first_day.date == datetime(2020, 12, 1)
-    assert last_day.date == datetime(2020, 12, 3)
+    assert first_day.date == date(2020, 12, 1)
+    assert last_day.date == date(2020, 12, 3)
     assert len(market.calendar) == 3
 
 
 def test_ticking():
     market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3), test_mode=True)
-
+    market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
     market.run_simulation()
     debug_date_list = []
     with open("tests\\debug_date_list.csv", "r", newline="") as f:
@@ -51,7 +52,8 @@ def test_ticking():
 
 
 def test_current_price():
-    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3), test_mode=True)
+    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
 
     debug_price_list = []
     with open("tests\\price_interp.csv", "r", newline="") as f:
@@ -72,7 +74,8 @@ def test_current_price():
 
 def test_loop_speed():
     assets_symbol = [x.symbol for x in Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True))]
-    mt = Market(asset_context=assets_symbol, end_date=datetime(2015, 1, 30), test_mode=True)
+    mt = Market(asset_context=assets_symbol, end_date=datetime(2015, 1, 30))
+    mt.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
     portfolio = mt.register_portfolio(1000*len(assets_symbol))
 
     ASSET_COUNT = 100
