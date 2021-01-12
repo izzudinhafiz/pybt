@@ -71,7 +71,8 @@ class CoinFlipStrategy(Optimizer):
 
     def execute(self, data):
         for ticker in self.portfolio.asset_context:
-           coin_flip = random.randint(0, 2) # If 0, we dont buy, if 1, we buy
+            coin_flip = random.randint(0, 2) # If 0, we dont buy, if 1, we buy
+
             if coin_flip:
                 self.portfolio.open_position_by_value(ticker, 100)
 ```

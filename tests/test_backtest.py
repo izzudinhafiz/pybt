@@ -22,7 +22,7 @@ api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.mark
 
 
 def test_init():
-    market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3), test_mode=True)
     first_day = market.calendar[0]
     last_day = market.calendar[-1]
 
@@ -32,7 +32,7 @@ def test_init():
 
 
 def test_ticking():
-    market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market = Market(asset_context=["AAPL"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3), test_mode=True)
 
     market.run_simulation()
     debug_date_list = []
@@ -51,7 +51,7 @@ def test_ticking():
 
 
 def test_current_price():
-    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3), test_mode=True)
 
     debug_price_list = []
     with open("tests\\price_interp.csv", "r", newline="") as f:
@@ -72,7 +72,7 @@ def test_current_price():
 
 def test_loop_speed():
     assets_symbol = [x.symbol for x in Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True))]
-    mt = Market(asset_context=assets_symbol, end_date=datetime(2015, 1, 30))
+    mt = Market(asset_context=assets_symbol, end_date=datetime(2015, 1, 30), test_mode=True)
     portfolio = mt.register_portfolio(1000*len(assets_symbol))
 
     ASSET_COUNT = 100
