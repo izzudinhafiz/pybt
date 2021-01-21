@@ -8,6 +8,7 @@ if __name__ == "__main__":
 
 from commons.money import Money
 from commons.backtest import Market
+from commons.backtest.datapack import PriceDataPack
 from datetime import datetime
 import csv
 import os
@@ -19,6 +20,7 @@ pg_db.bind([Asset, Price, Financial])
 SECRET_KEY = os.getenv("SECRET_KEY")
 API_KEY = os.getenv("API_KEY")
 api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.markets")
+datapack = PriceDataPack.load_cache("cached_test")
 
 
 def test_portfolio_long_position():
@@ -28,9 +30,10 @@ def test_portfolio_long_position():
         for row in reader:
             portfolio_label_data.append(row)
 
-    mt = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
-    mt.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
-    portfolio = mt.register_portfolio(100_000)
+    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
+    market.load_price_data(datapack)
+    portfolio = market.register_portfolio(100_000)
     portfolio.open_position_by_size("MMM", 500)
 
     portfolio_label_data = portfolio_label_data[1:]
@@ -44,7 +47,7 @@ def test_portfolio_long_position():
         assert Money(label_gain) == position.gain
         assert Money(label_nett_gain) == portfolio.nett_gain
         assert Money(label_total_equity) == portfolio.cash + portfolio.equity
-        mt.next_tick()
+        market.next_tick()
 
 
 def test_portfolio_short_position():
@@ -54,9 +57,10 @@ def test_portfolio_short_position():
         for row in reader:
             portfolio_label_data.append(row)
 
-    mt = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
-    mt.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
-    portfolio = mt.register_portfolio(100_000)
+    market = Market(asset_context=["MMM"], start_date=datetime(2020, 12, 1), end_date=datetime(2020, 12, 3))
+    market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
+    market.load_price_data(datapack)
+    portfolio = market.register_portfolio(100_000)
     portfolio.open_position_by_size("MMM", -500)
 
     portfolio_label_data = portfolio_label_data[1:]
@@ -66,7 +70,7 @@ def test_portfolio_short_position():
         position = portfolio.open_positions[0]
 
         if Money(label_price) != position.current_price:
-            print(mt.time_now, Money(label_price), position.current_price)
+            print(market.time_now, Money(label_price), position.current_price)
 
         assert Money(label_price) == position.current_price
         assert Money(label_value) == position.current_value
@@ -74,7 +78,7 @@ def test_portfolio_short_position():
         assert Money(label_nett_gain) == portfolio.nett_gain
         assert Money(label_total_equity) == portfolio.cash + portfolio.equity
         assert Money(label_margin) == portfolio.margin
-        mt.next_tick()
+        market.next_tick()
 
 
 # test_portfolio_short_position()
