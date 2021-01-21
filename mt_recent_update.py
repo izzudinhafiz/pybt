@@ -27,7 +27,7 @@ mt_tz = mt.market_tz
 
 def worker_db():
     while True:
-        print(f"Write Queue Size: {write_q.qsize()}")
+        # print(f"Write Queue Size: {write_q.qsize()}")
         try:
             data = write_q.get(block=False)
             with pg_db.atomic():

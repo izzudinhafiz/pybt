@@ -1,19 +1,27 @@
-from commons.models.market_model import Asset, Price, sq_db, pg_db
-import time
-import datetime as dt
-import csv
+from commons.backtest.datapack import PriceDataPack
+import os
+import pandas as pd
+from datetime import datetime
 
-pg_db.bind([Asset, Price])
+dp = PriceDataPack.load_cache("cached_test")
+print(dp.meta.source)
 
-start = time.time()
-aapl = Asset.get(Asset.symbol == "MMM")
+print(dp.get_price("AAPL", datetime(2021, 1, 7, 9, 30)))
+# print(dp.symbols)
 
-start = time.time()
-prices = Price.select().where((Price.asset == aapl) & (Price.time >= dt.datetime(2020, 12, 1)) & (Price.time <= dt.datetime(2020, 12, 4))).dicts()
+# pkl_files = os.listdir("pickled_price_data")
 
-headers = prices[0].keys()
-with open("scenario_test.csv", "w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=headers)
-    writer.writeheader()
-    for price in prices:
-        writer.writerow(price)
+# dfs = {}
+
+# for file in pkl_files:
+#     file_path = os.path.join("pickled_price_data", file)
+#     symbol = file[:-4]
+#     df = pd.read_pickle(file_path)
+#     df = df[["open", "high", "low", "close", "volume", "time"]]
+#     df.set_index("time", inplace=True)
+#     df.sort_index(inplace=True)
+#     dfs[symbol] = df
+
+# dp = PriceDataPack.load_pandas(dfs)
+
+# dp.create_cache("cached_test", overwrite=True)
