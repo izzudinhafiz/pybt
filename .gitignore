@@ -1,18 +1,21 @@
 #ignore database
 *.db*
-
+*.pkl
 
 #ignore env variables
 *.env
 
-#ignore pyenv
+#ignore dev folders
 **ocr-ml
-
 *.vscode
-
 **/__pycache__
 
-# Ignore spreadsheets etc
+#ignore data folders
+**data_cache
+**pickled_price_data/
+
+# Ignore certain dev extensions
 *.csv
 *.xls*
-test.profile
+*.h5
+*.profile

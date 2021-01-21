@@ -1,15 +1,27 @@
-from commons.models.market_model import Asset, Price, Financial, pg_db
 from commons.backtest.indicators import SMAIndicator
-from datetime import datetime
+from commons.backtest.datapack import PriceDataPack
 from commons.backtest import Scorer, Optimizer, Market
+from datetime import datetime
+import os
 
-pg_db.bind([Asset, Price, Financial])
+# Alpaca API Information
+SECRET_KEY = os.getenv("SECRET_KEY")
+API_KEY = os.getenv("API_KEY")
 
-assets_symbol = [x.symbol for x in Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True))]
-mt = Market(asset_context=assets_symbol, start_date=datetime(2020, 1, 1), end_date=datetime(2020, 1, 31), debug_mode=False)
+# Loading data for simulation
+datapack = PriceDataPack.load_cache("dp-test.pkl")
+
+# Getting available symbols from our datapack
+assets_symbol = datapack.symbols
+
+# Setting up our simulation context
+market = Market(asset_context=assets_symbol, start_date=datetime(2020, 1, 1), end_date=datetime(2020, 1, 31), debug_mode=True)
+market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)  # Gets the trading calendar from Alpaca
+market.load_price_data(datapack)    # Loads our datapack into the simulation
 
 
 class MAScorer(Scorer):
+    # Scoring object. This runs calculation on market prices
 
     def __init__(self):
         super().__init__()
@@ -26,6 +38,7 @@ class MAScorer(Scorer):
         for indicator in self.indicators:
             cur_price = self.market.get_current_price(indicator.symbol)
             if cur_price is None:
+                print("ERROR")
                 continue
             average = indicator.update(cur_price)
             if average is None:
@@ -43,6 +56,7 @@ class MAScorer(Scorer):
 
 
 class BasicOptimizer(Optimizer):
+    # Optimizer/Strategy object. This runs decisions based on the output of our Scorer
 
     def __init__(self):
         super().__init__()
@@ -64,6 +78,8 @@ class BasicOptimizer(Optimizer):
                 self.portfolio.open_position_by_value(symbol, 1000)
 
 
-mt.register_portfolio(100_000, scorer=MAScorer, optimizer=BasicOptimizer)
+# Lets register a trader/portfolio to the market. We can register multiple portfolios
+market.register_portfolio(100_000, scorer=MAScorer, optimizer=BasicOptimizer)
 
-mt.run_simulation()
+# Run's the simulation
+market.run_simulation()
