@@ -13,9 +13,9 @@ class Calendar:
             raise TypeError(f"open should be datetime.time object. Got type {type(open)} instead")
         if not isinstance(close, time):
             raise TypeError(f"close should be datetime.time object. Got type {type(close)} instead")
-        self.date = _date
-        self.open = open
-        self.close = close
+        self.date: date = _date
+        self.open: time = open
+        self.close: time = close
 
         for key, value in kwargs.items():
             self.__dict__[key] = value
@@ -29,7 +29,7 @@ class CalendarData:
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: int) -> Calendar:
         return self.data[key]
 
     def __setitem__(self, key: int, value: Calendar):
