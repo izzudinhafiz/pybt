@@ -1,6 +1,6 @@
-from commons.backtest.indicators import SMAIndicator
-from commons.backtest.datapack import PriceDataPack
-from commons.backtest import Scorer, Optimizer, Market
+from pybt.indicators import SMAIndicator
+from pybt.datapack import PriceDataPack
+from pybt import Scorer, Optimizer, Market
 from datetime import datetime
 import os
 

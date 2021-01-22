@@ -6,20 +6,16 @@ if __name__ == "__main__":
     parentdir = os.path.dirname(currentdir)
     sys.path.append(parentdir)
 
-from commons.money import Money
-from commons.backtest import Market
-from commons.backtest.datapack import PriceDataPack
+from pybt.commons import Money
+from pybt import Market
+from pybt.datapack import PriceDataPack
 from datetime import datetime
 import csv
 import os
-from commons.models.market_model import Asset, Price, Financial, pg_db
-import alpaca_trade_api as tradeapi
 
 
-pg_db.bind([Asset, Price, Financial])
 SECRET_KEY = os.getenv("SECRET_KEY")
 API_KEY = os.getenv("API_KEY")
-api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.markets")
 datapack = PriceDataPack.load_cache("cached_test")
 
 
@@ -79,6 +75,3 @@ def test_portfolio_short_position():
         assert Money(label_total_equity) == portfolio.cash + portfolio.equity
         assert Money(label_margin) == portfolio.margin
         market.next_tick()
-
-
-# test_portfolio_short_position()

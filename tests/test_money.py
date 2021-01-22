@@ -6,7 +6,7 @@ if __name__ == "__main__":
     parentdir = os.path.dirname(currentdir)
     sys.path.append(parentdir)
 
-from commons.money import Money
+from pybt.commons import Money
 import pytest
 
 

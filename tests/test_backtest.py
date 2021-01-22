@@ -6,17 +6,15 @@ if __name__ == "__main__":
     parentdir = os.path.dirname(currentdir)
     sys.path.append(parentdir)
 
-from commons.money import Money
-from commons.backtest import Market
-from commons.backtest.datapack import PriceDataPack
+from pybt.commons import Money
+from pybt import Market
+from pybt.datapack import PriceDataPack
 from datetime import datetime, time, date
 import csv
 import os
 import time
-from commons.models.market_model import Asset, Price, Financial, pg_db
 import alpaca_trade_api as tradeapi
 
-pg_db.bind([Asset, Price, Financial])
 SECRET_KEY = os.getenv("SECRET_KEY")
 API_KEY = os.getenv("API_KEY")
 api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.markets")
@@ -77,7 +75,7 @@ def test_current_price():
 
 
 def test_loop_speed():
-    assets_symbol = [x.symbol for x in Asset.select().where((Asset.sp500 == True) & (Asset.tradable == True))]
+    assets_symbol = datapack.symbols
     market = Market(asset_context=assets_symbol, end_date=datetime(2015, 1, 30))
     market.load_calendar_data("alpaca", api_key=API_KEY, secret_key=SECRET_KEY)
     market.load_price_data(datapack)

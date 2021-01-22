@@ -19,3 +19,6 @@
 *.xls*
 *.h5
 *.profile
+
+# Ignore development python files
+*dev_*.py

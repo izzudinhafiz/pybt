@@ -1,12 +1,9 @@
-from commons import Money
-from commons.helper import timer
-import pickle
-from time import perf_counter
-import pandas as pd
-from typing import Any, Union, Optional
-import datetime as dt
 import os
+import pickle
 import warnings
+import pandas as pd
+from typing import Optional
+import datetime as dt
 DEBUG = True
 
 # Datapack containing all the data for a symbol
@@ -181,6 +178,7 @@ class PriceDataPack:
         cls.valid_filename(name, raise_error=True)
         metadata_dir = os.path.join(os.getcwd(), cls.cache_path, cls.meta_path)
         metadata_path = os.path.join(metadata_dir, name + ".pkl")
+
         with open(metadata_path, "rb") as f:
             metadata = pickle.load(f)
 

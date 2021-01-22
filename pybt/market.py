@@ -1,19 +1,11 @@
-from commons.markettime import MarketTime
-from commons.models.market_model import Asset, Price, Financial, pg_db, sq_db
-from commons.backtest.portfolio import Portfolio
-from commons.backtest.datapack import CalendarData, Calendar, PriceDataPack, PriceData
+from pybt.portfolio import Portfolio
+from pybt.datapack import CalendarData, Calendar, PriceDataPack, PriceData
+from pybt.commons import Money
+from pybt.commons.markettime import MarketTime
+from pybt.commons.helper import timer
 from datetime import datetime, timedelta, date, time
-import alpaca_trade_api as tradeapi
-import os
-from commons.money import Money
 from scipy.interpolate import interp1d
-import numpy as np
 import pandas as pd
-from commons.helper import timer
-pg_db.bind([Asset, Price, Financial])
-SECRET_KEY = os.getenv("SECRET_KEY")
-API_KEY = os.getenv("API_KEY")
-api = tradeapi.REST(API_KEY, SECRET_KEY, base_url="https://paper-api.alpaca.markets")
 
 
 class Market:
