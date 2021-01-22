@@ -15,7 +15,7 @@ A backtesting framework for stock trading algorithm with the following aim
 ## Basic Usage
 
 ```python
-from commons.backtest import Market
+from pybt import Market
 
 market = Market(asset_context=["AAPL", "GOOGL"])
 ```
@@ -63,7 +63,7 @@ Most use cases would require multiple symbols of price data to be loaded for sim
 DataFrames must be loaded into the `PriceDataPack` object. This object presents a common interface for the `Market` object to interact with. This can be done by calling the object's classmethod `.load_pandas` as below.
 
 ```python
-from commons.backtest.datapack import PriceDataPack
+from pybt.datapack import PriceDataPack
 
 aapl_df = pd.read_csv("appl.txt")
 goog_df = pd.read_csv("goog.txt")
@@ -82,7 +82,7 @@ It is best to not use Pandas when loading massive datasets into the simulation. 
 We can address this by using the cached version of the data pack. We create it once, and can keep reloading it as necessary with very high performance.
 
 ```python
-from commons.backtest.datapack import PriceDataPack
+from pybt.datapack import PriceDataPack
 
 aapl_df = pd.read_csv("appl.txt")
 goog_df = pd.read_csv("goog.txt")
@@ -116,7 +116,7 @@ You then create a custom class that inherits from `Optimizer` and specify (at a 
 `execute` method gets called for every timestep in the simulation
 
 ```python
-from commons.backtest import Optimizer
+from pybt import Optimizer
 
 class MyStrategy(Optimizer):
     def execute(self, data):
