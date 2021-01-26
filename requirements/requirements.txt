@@ -1,0 +1,4 @@
+pandas
+numpy
+alpaca-trade-api>=0.52.0
+scipy

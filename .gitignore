@@ -8,11 +8,12 @@
 #ignore dev folders
 **ocr-ml
 *.vscode
-**/__pycache__
+**__pycache__
 
 #ignore data folders
 **data_cache
 **pickled_price_data/
+**price_data_hdf5
 
 # Ignore certain dev extensions
 *.csv
@@ -22,3 +23,9 @@
 
 # Ignore development python files
 *dev_*.py
+*.ipynb
+
+# Ignore distribution files
+dist/
+build/
+*.egg-info

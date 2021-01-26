@@ -4,23 +4,9 @@ import warnings
 import pandas as pd
 from typing import Optional
 import datetime as dt
-DEBUG = True
+from pybt.datapack.metadata import DataPackMetaData
 
-# Datapack containing all the data for a symbol
-# Make this lazy laod data. this actually handles different data types
-# Holds a reference to data that isnt actually loaded into memory
-# Calls to load_data moves subset of data into memory
-# Calls to get_price returns that price
-
-
-class DataPackMetaData:
-    def __init__(self, source: str = None, path: str = None):
-        self.source = source
-        self.source_path = path
-
-    def save(self, path):
-        with open(path, "wb") as f:
-            pickle.dump(self, f)
+DEBUG = False
 
 
 class PriceData:
@@ -221,7 +207,7 @@ class PriceDataPack:
         dp.meta = metadata
         dps = []
         for symbol, df in dfs.items():
-            temp = PriceData(symbol, metadata.source, df=df)
+            temp = PriceData(symbol, metadata.data_type, df=df)
             dps.append(temp)
 
         dp.load_bulk_data(dps)
@@ -260,18 +246,18 @@ class PriceDataPack:
         if os.path.exists(full_path) & (not overwrite):
             raise FileExistsError(f"{full_path} exists already. Set overwrite mode if you want to replace the file")
 
-        if metadata.source == "pandas":
+        if metadata.data_type == "pandas":
             store = pd.HDFStore(full_path, mode="w")
 
             for key, data in self.data.items():
                 data._pd_save(store)
 
             store.close()
-            metadata.source = "pandas-hdf5"
-            metadata.source_path = full_path
+            metadata.data_type = "pandas-hdf5"
+            metadata.file_path = full_path
 
             self.meta = metadata
             self.save(os.path.join(cache_dir, self.meta_path, name + ".pkl"))
             print(f"Saved cached data at {full_path}")
         else:
-            raise NotImplementedError(f"Caching {metadata.source} is not yet supported")
+            raise NotImplementedError(f"Caching {metadata.data_type} is not yet supported")
